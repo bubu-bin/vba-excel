@@ -1,0 +1,601 @@
+Option Base 1
+Global HighestValue As Variant
+Global POValue As Variant
+Global MyNumber As Variant
+Global Vendor As Variant
+Global FindVendor As Variant
+Global IfExistsVendor As Variant
+Global VendorInWsDa As Variant
+Global Reference As Variant
+Global VendorRefExists As Variant
+Global FindVendorInWsDa As Variant
+Public Function SuperMid(ByVal strMain As String, str1 As Variant, str2 As Variant, Optional reverse As Boolean) As String
+
+Dim i As Integer, j As Integer, temp As Variant
+On Error GoTo errhandler:
+If reverse = True Then
+    i = InStrRev(strMain, str1)
+    j = InStrRev(strMain, str2)
+    If Abs(j - i) < Len(str1) Then j = InStrRev(strMain, str2, i)
+    If i = j Then 'try to search 2nd half of string for unique match
+        j = InStrRev(strMain, str2, i - 1)
+    End If
+Else
+    i = InStr(1, strMain, str1)
+    j = InStr(1, strMain, str2)
+    If Abs(j - i) < Len(str1) Then j = InStr(i + Len(str1), strMain, str2)
+    If i = j Then 'try to search 2nd half of string for unique match
+        j = InStr(i + 1, strMain, str2)
+    End If
+End If
+If i = 0 And j = 0 Then GoTo errhandler:
+If j = 0 Then j = Len(strMain) + Len(str2) 'just to make it arbitrarily large
+If i = 0 Then i = Len(strMain) + Len(str1) 'just to make it arbitrarily large
+If i > j And j <> 0 Then 'swap order
+    temp = j
+    j = i
+    i = temp
+    temp = str2
+    str2 = str1
+    str1 = temp
+End If
+i = i + Len(str1)
+SuperMid = Mid(strMain, i, j - i)
+Exit Function
+errhandler:
+MsgBox "Error extracting strings. Check your input" & vbNewLine & vbNewLine & "Aborting", , "Strings not found"
+End
+End Function
+Public Function Commande(mystr As String)
+
+splitbreak = Split(mystr, " ")
+
+End Function
+Function ZoomPO(PONumber As String, Optional SecondCase As Boolean)
+    
+    Set FindPO = Cells.Find(What:=PONumber, LookIn:=xlValues, LookAt _
+        :=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlNext, MatchCase:= _
+        False, SearchFormat:=False)
+    
+    If FindPO Is Nothing Then
+     MsgBox "String not found"
+        Exit Function
+    End If
+    
+    
+    ThePORow = FindPO.Row
+    ThePOColumn = FindPO.Column
+
+'**************************************
+'Set values for "zoom"
+
+    NumOfRowsStart = ThePORow
+    NumOfRowsEnd = ThePORow + 2
+    NumOfRArray = NumOfRowsEnd - NumOfRowsStart
+    NumOfColumnsStart = 1
+    NumOfColumnsEnd = 30
+    NumOfCArray = NumOfColumnsEnd - NumOfColumnsStart
+    NumForArray = NumOfRArray * NumOfCArray
+    
+    
+    ' LOOK AFTER ZROB WLASNA FUNKCJE
+    
+    
+    myponumbers = Array(2, 5, 6, 8)
+    
+For nOfRow = NumOfRowsStart To NumOfRowsEnd
+
+    For nOfColumn = NumOfColumnsStart To NumOfColumnsEnd
+        
+        Base = Cells(nOfRow, nOfColumn)
+        
+        splitbreak = Split(Base, " ")
+        
+        
+        For w = LBound(splitbreak) To UBound(splitbreak)            'w stands for whole string length
+            
+            For cPO = 1 To 4
+            Debug.Print splitbreak(w)
+                
+            If splitbreak(w) Like "*" & myponumbers(cPO) & "#######*" Then    'cPO stands fo casePO CHECKPOINT
+                                                                                            
+                newPO = splitbreak(w)
+                
+                If Len(splitbreak(w)) > 8 Then
+                
+                Dim myArray() As String
+                
+                myArray = ConvertToArray(splitbreak(w))
+            
+                For e = 0 To Len(splitbreak(w)) - 1                   'e stands for specific element for an array
+                    
+                    If IsNumeric(myArray(e)) Or myArray(e) = "." Then
+                    
+                        myvalue = myvalue + myArray(e)
+                        
+                        Debug.Print myvalue
+            
+                        If myvalue Like "##.##.####" Then
+                        
+                            myvalue = vbnullvalue
+                            
+                        End If
+                        
+                        For cPO2 = 1 To 4
+                        
+                            If myvalue Like myponumbers(cPO2) & "#######" Then
+                            
+                                If SecondCase = True Then
+                                    
+                                    myvalue = vbnullvalue
+                                    GoTo nextw
+                                    
+                                Else
+                                
+                                    POValue = myvalue
+                                    'MsgBox POValue
+                            
+                            End If
+                                
+                                
+                            Exit Function
+                                
+                            End If
+                            
+                            If Len(myvalue) = Len(splitbreak(w)) Then
+                            
+                            '************** to trzeba ogarnac lepiej
+                            
+                            If Not myvalue Like myponumbers(cPO2) & "#######" Then
+                            
+                                Debug.Print myvalue
+                                
+                                myvalue = vbnullvalue
+                            
+                            End If
+                            
+                            '***************************************
+                            
+                            End If
+                        
+                        Next cPO2
+                        
+                    End If
+                    
+                Next e
+        
+                End If
+                    
+                    POValue = newPO
+                
+            End If
+            
+            Next cPO
+            
+nextw:
+    
+        Next w
+    
+    Next nOfColumn
+    
+Next nOfRow
+
+End Function
+Public Function ZoomTotal(Total As String, RowsEnd As Integer, ColumnStart As Integer, ColumnEnd As Integer, Optional PreserveArrayWhenSpace As Boolean)
+
+'**************************************
+
+
+
+Set FindTotal = Cells.Find(What:=Total, LookIn:=xlValues, LookAt _
+        :=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlNext, MatchCase:= _
+        False, SearchFormat:=False)
+    
+    If FindTotal Is Nothing Then
+    MsgBox "String Total not found"
+       Exit Function
+       
+    End If
+    
+    FindTotal.Select
+    
+    TheTotalRow = FindTotal.Row
+    TheTotalColumn = FindTotal.Column
+
+'**************************************
+'Set values for "zoom"
+
+NumOfRowsStart = TheTotalRow
+NumOfRowsEnd = RowsEnd + NumOfRowsStart
+NumOfRArray = NumOfRowsEnd - NumOfRowsStart
+NumOfColumnsStart = ColumnStart   'zrobic funkcje
+NumOfColumnsEnd = NumOfColumnsStart + ColumnEnd
+NumOfCArray = NumOfColumnsEnd - NumOfColumnsStart
+NumForArray = NumOfRArray * NumOfCArray
+
+Dim Arr() As Variant
+Dim ArrInt As Variant
+Dim FinalArray() As Variant
+
+ReDim Arr(100)
+
+ArrInt = Array(".", " ", ",")
+ArrInt2 = Array(".", " ", ",") ' rozkminic jak wyzerowac wartosc
+ArrSeq = Array("#*.#*")
+ 
+'**************************************
+'Array scope
+ 
+On Error Resume Next
+ 
+For nOfRow = NumOfRowsStart To NumOfRowsEnd
+
+    For nOfColumn = NumOfColumnsStart To NumOfColumnsEnd
+        
+        Base = Cells(nOfRow, nOfColumn)
+        
+        If Base Like "# #*,##" Then
+            
+            Result = Replace(Base, " ", "")
+            Z = Z + 1
+            Arr(Z) = Result
+            GoTo NextSplitLong
+            
+        End If 'Condition met when the main value is ex. 1 434,33 and replace the space
+        
+        Debug.Print Base
+'**************************************
+'THIS DECOMPOSE INTO STRINGS DIVIDED WITH SPACE
+
+        SplitGeneral = Split(Base, " ")
+        
+        For SplitLong = LBound(SplitGeneral) To UBound(SplitGeneral)
+                                            
+                Debug.Print SplitGeneral(SplitLong)
+                
+            Dim myArray() As String 'pomysl nad inna nazwa
+            
+            If SplitGeneral(SplitLong) = "" Then
+            
+                GoTo NextSplitLong
+            
+            End If  'Condition met when the string is empty
+                
+'CHECKPOINT FOR STRING --------> NEXT LINE
+                
+                For SpecialSignArray = LBound(ArrInt) To UBound(ArrInt)
+                           
+                    If WhenSpace = 1 Then
+                        
+                        WhenSpace = 0
+                        GoTo SplitIt
+                    
+                    End If  'Condition met when ex. 5 342,99 case with space between two SplitLongs
+                           
+                           'I tu powinienem dodac rozne opcje jakie moga wyjsc i potem wrocic z elemental part
+                           
+                    If SplitGeneral(SplitLong) Like "#*" & ArrInt(SpecialSignArray) & "#*" _
+                    Or SplitGeneral(SplitLong) Like "#*#" _
+                    And Not SplitGeneral(SplitLong) Like "#.#*%" Then    'Here condintions as well what not to count as myvalue
+                           
+                            Z = Z + 1
+                            Result = SplitGeneral(SplitLong)
+                            Debug.Print Result
+                            Arr(Z) = Result
+                        
+                        If Len(SplitGeneral(SplitLong)) > 10 Then
+                        
+                            GoTo SplitIt
+                        
+                        End If
+                        
+'****************************
+'Conversion part (replacing)
+                        
+                        If SplitGeneral(SplitLong) Like "#*,##" Then
+                        
+                            Result = Replace(SplitGeneral(SplitLong), ArrInt(SpecialSignArray), ",")
+                            Debug.Print Result
+                            Arr(Z) = Result
+                            
+                        Else    ' REPLACING FOR "," BEZ SENSU BO PO CO MA ZAMIENIAC "," NA ","
+                        
+                            Result = Replace(SplitGeneral(SplitLong), ArrInt(SpecialSignArray), "")
+                            Debug.Print Result
+                            Arr(Z) = Result
+                            End If   ' REPLACING FOR ""
+                            
+                        GoTo NextSplitLong
+                           
+                    End If  'Condition met when divided string is found AND has format ex. 553.45.. and does not have %
+                       
+                       
+                       If SplitGeneral(SplitLong) Like "##*" & ArrInt(SpecialSignArray) & "#*" _
+                       And Not SplitGeneral(SplitLong) Like "*#" & ArrInt(SpecialSignArray) & "#*,*" _
+                       And Not SplitGeneral(SplitLong) Like "*#" & ArrInt(SpecialSignArray) & "#%*" Then             'Tu dokonalem zmiany    (zmienilem * na #)                                                                 'when the whole "string" is a number
+                                               
+                           Z = Z + 1
+                           Result = Replace(SplitGeneral(SplitLong), ArrInt(SpecialSignArray), ",")
+                           
+                           If Result < 30000 Then
+                           
+                            Arr(Z) = Result
+                            Debug.Print Result
+                            myvalue = vbnullvalue
+                            GoTo NextSplitLong
+                               
+                           End If
+                           
+                       End If 'Condition met when divided string is found AND has format 32,34; 99.45; 42 4 AND not merged numbers double commas (,,) and % in the end
+                   
+                Next SpecialSignArray
+                
+    '********************
+    'THIS DECOMPOSE INTO SINGLE ELEMENT
+    
+SplitIt:
+    
+                    SplitElement = ConvertToArray(SplitGeneral(SplitLong))
+    
+                    For splitShort = 0 To Len(SplitGeneral(SplitLong)) - 1
+                    
+                        'On Error Resume Next
+                        Debug.Print SplitElement(splitShort)
+                            
+                                If SplitElement(splitShort) = "-" Then  'HERE WILL BE CASES WHEN TO ANNULE THE VALUE! Zastanow sie czy nie przeniesc tego nizej
+                                            
+                                    myvalue = vbnullvalue
+                                                
+                                End If
+                        
+                            If IsNumeric(SplitElement(splitShort)) Or SplitElement(splitShort) = "." _
+                            Or SplitElement(splitShort) = " " Or SplitElement(splitShort) = "," _
+                            Then
+                                
+                                myvalue = myvalue + SplitElement(splitShort)
+                                Debug.Print myvalue
+                                    
+                                 For SpecialSignArray2 = LBound(ArrInt2) To UBound(ArrInt2)
+                                 
+                                    If myvalue Like "##*" & ArrInt(SpecialSignArray2) & "##" Then
+                                    
+                                        Z = Z + 1
+                                        Arr(Z) = myvalue
+                                        Debug.Print Arr(Z)
+                                        myvalue = vbnullvalue
+                                        
+                                    ElseIf myvalue Like "#,##" Then 'Condition met when value is ex. 4,55
+                                    
+                                        myvalue = vbnullvalue
+                                    
+                                    ElseIf myvalue > 15000 Then 'Condition met when value is > 15000
+                                    
+                                        myvalue = vbnullvalue
+                                        GoTo NextSplitLong
+                                    
+                                    ElseIf myvalue Like "#" And PreserveArrayWhenSpace = True Then 'Conditon met when we want to deal with ex. 4 323,...
+                                        
+                                        WhenSpace = 1
+                                        GoTo NextSplitLong
+                                    
+                                    End If  'Condition met when the digit has 34*,67 or ELSE when has only one digit
+                                    
+                                Next SpecialSignArray2
+                            
+                            End If  'Condition met when the given substring is a number or has "." or has " " or has ","
+                    
+                    Next splitShort
+                    
+                    
+                    'Z = Z + 1
+                    'Arr(Z) = myvalue
+                    'Debug.Print Arr(Z)
+                    'myvalue = vbnullvalue
+                    
+NextSplitLong:
+            
+        Next SplitLong
+        
+    Next nOfColumn
+
+Next nOfRow
+
+'**************************************
+'See the results
+
+'msgString = Join(arr, vbCr)
+'MsgBox "the values of my dynamic array are: " & vbCr & msgString
+
+
+HighestValue = GetMaxNumber(Arr)
+
+
+End Function
+Public Function ZoomFacture(FactureN As String, Digits As Variant, RowsEnd As Integer, ColumnStart As Integer, ColumnEnd As Integer, Optional Mid1 As Integer, Optional Mid2 As Integer)
+
+Set FindFacture = Cells.Find(What:=FactureN, LookIn:=xlValues, LookAt _
+        :=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlNext, MatchCase:= _
+        False, SearchFormat:=False)
+        
+        
+    If FindFacture Is Nothing Then
+    MsgBox "String not found"
+       Exit Function
+       
+    End If
+    
+    FindFacture.Select
+    
+    FactureRow = FindFacture.Row
+
+'**************************************
+'Set values for "zoom"
+
+NumOfRowsStart = FactureRow
+NumOfRowsEnd = FactureRow + RowsEnd
+NumOfColumnsStart = ColumnStart
+NumOfColumnsEnd = ColumnEnd
+
+
+Dim FactureArray(100) As Variant
+
+For nOfRow = NumOfRowsStart To NumOfRowsEnd
+
+    For nOfColumn = NumOfColumnsStart To NumOfColumnsEnd
+        
+        Base = Cells(nOfRow, nOfColumn)
+        
+        Debug.Print Base
+        
+        Cells(nOfRow, nOfColumn).Select
+        
+        SplitGeneral = Split(Base, " ")
+        
+        For SplitLong = LBound(SplitGeneral) To UBound(SplitGeneral)
+        
+            Debug.Print SplitGeneral(SplitLong)
+            
+            If SplitGeneral(SplitLong) = "" Then
+        
+                GoTo NextSplitLong
+            
+            End If
+            
+            'Z = Mid(SplitGeneral(SplitLong), 10, 9)    'For check
+            'Debug.Print Z
+            
+            If Mid1 = 0 Then
+                GoTo OmitTheLine
+            End If
+            
+            If Mid(SplitGeneral(SplitLong), Mid1, Mid2) Like Digits Then 'CheckPoint
+            
+                MyNumber = Mid(SplitGeneral(SplitLong), Mid1, Mid2)
+                
+                Exit Function
+            
+            End If
+OmitTheLine:
+            If SplitGeneral(SplitLong) Like Digits Then
+            
+                MyNumber = SplitGeneral(SplitLong)
+                
+                Exit Function
+                
+            Else
+            
+                SplitElement = ConvertToArray(SplitGeneral(SplitLong))
+                
+                For splitShort = LBound(SplitElement) To UBound(SplitElement)
+                    
+                    Debug.Print SplitElement(splitShort)
+                    
+                    If SplitElement(splitShort) Like Left(Digits, 1) Then
+                    
+                        For SplitShort2 = LBound(SplitElement) + splitShort To UBound(SplitElement)
+                        
+                            CreateArray = CreateArray + 1       'Check point
+                        
+                            FactureArray(CreateArray) = SplitElement(SplitShort2)
+                            
+                            FactureNumb = Join(FactureArray, "")
+                            
+                            Debug.Print FactureNumb
+                            
+                            If FactureNumb Like Digits Then
+                            
+                                MyNumber = FactureNumb
+                                
+                                Exit Function
+                                
+                            'ElseIf Len(FactureNumb) <= 2 Then
+                            
+                                'FactureArray(CreateArray) = vbnullvalue
+                            
+                            End If  'Logic with the array of single characters
+                            
+                        Next SplitShort2
+                            
+                    End If  'Logic with the Facture Array
+                        
+                Next splitShort
+                
+            End If  'Logic with the Function Variable
+            
+NextSplitLong:
+
+        Next SplitLong
+    
+    Next nOfColumn
+
+Next nOfRow
+
+
+End Function
+Public Function GetMaxNumber(ByRef strValues() As Variant) As Double
+
+Dim i As Long
+
+For i = LBound(strValues) To UBound(strValues)
+    If IsNumeric(strValues(i)) Then
+        If CDbl(strValues(i)) > GetMaxNumber Then GetMaxNumber = CDbl(strValues(i))
+    End If
+Next i
+
+End Function
+Function ConvertToArray(ByVal value As String)
+    
+    If value = "" Then
+    
+        Exit Function
+    
+    Else
+    
+        value = StrConv(value, vbUnicode)
+        ConvertToArray = Split(Left(value, Len(value) - 1), vbNullChar)
+        
+    End If
+    
+End Function
+Function FunctionFindVendor(Vendor As Variant)
+
+    Set FindVendor = Cells.Find(What:=Vendor, LookIn:=xlValues, LookAt _
+        :=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlNext, MatchCase:= _
+        False, SearchFormat:=False)
+        
+    If Not FindVendor Is Nothing Then
+        
+        IfExistsVendor = FindVendor
+        
+    Else
+
+        Exit Function
+        
+    End If
+    
+End Function
+Function FindAndAddLink(VendorInWsDa As Variant, Reference As Variant)
+
+    Set FindVendorInWsDa = Cells.Find(What:=VendorInWsDa, LookIn:=xlValues, LookAt _
+        :=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlNext, MatchCase:= _
+        False, SearchFormat:=False)
+    
+    Set FindRef = Cells.Find(What:=Reference, LookIn:=xlValues, LookAt _
+        :=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlNext, MatchCase:= _
+        False, SearchFormat:=False)
+    
+    
+    If Not FindVendorInWsDa Is Nothing And Not FindRef Is Nothing Then
+    
+        VendorRefExists = 1
+        
+    Else
+    
+        Exit Function
+    
+    End If
+    
+End Function
+
+
+

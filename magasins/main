@@ -1,0 +1,360 @@
+Option Explicit
+Dim Start As Integer, MyEnd As Integer, rList As Variant, FirstCell As Integer, LastCell As Integer, RapEnd As Integer, FilterSt As Integer, FilterEn As Integer
+Sub Raport_Order()
+    
+    Worksheets("Stan zapasów").Select
+    Rows("1:1").delete Shift:=xlUp
+
+    'Change order of the columns
+    Columns("C:C").Cut
+    Columns("A:A").Insert Shift:=xlToRight
+    Columns("D:D").Cut
+    Columns("C:C").Insert Shift:=xlToRight
+    Columns("Q:Q").Cut
+    Columns("D:D").Insert Shift:=xlToRight
+    Columns("M:M").Cut
+    Columns("E:E").Insert Shift:=xlToRight
+    
+    
+    Worksheets("kontrol").Select
+    
+End Sub
+Sub FormatAR()
+
+
+   Application.ScreenUpdating = False
+    
+    Columns("A:Z").EntireColumn.Hidden = False
+    
+    Worksheets("DostawaAR").Select
+    
+    'Clear contents
+    ActiveSheet.Shapes.Range(Array("Image 1")).delete
+    ActiveSheet.Shapes.Range(Array("Image 2")).delete
+    Rows("1:14").delete Shift:=xlUp
+    Columns("A:E").Select
+    Selection.delete Shift:=xlToLeft
+    
+    Start = Range("C3").Row
+    MyEnd = Range("C3").End(xlDown).Row
+    
+   
+    'Add Columns And Names
+    Columns("A:A").Select
+    Selection.Insert Shift:=xlToRight
+    Selection.Insert Shift:=xlToRight
+    
+    'Fill
+    Range("a3").FormulaR1C1 = "0"
+    Range("a3").AutoFill Destination:=Range(Cells(Start, 1), Cells(MyEnd, 1))
+    Range("B3").FormulaR1C1 = "=RC[-1]&RC[1]"
+    Range("B3").AutoFill Destination:=Range(Cells(Start, 2), Cells(MyEnd, 2))
+    Range(Cells(Start, 2), Cells(MyEnd, 2)).Copy
+    Range("B3").PasteSpecial Paste:=xlPasteValues, Operation:=xlNone
+    
+    'Add brand name
+    Range("A3").FormulaR1C1 = "BIODERMA"
+    Range("A3").AutoFill Destination:=Range(Cells(Start, 1), Cells(MyEnd, 1))
+    
+    
+    'Rearrange the order
+    Columns("C:C").delete Shift:=xlToLeft
+    Columns("A:A").Cut
+    Columns("C:C").Insert Shift:=xlToRight
+    Columns("L:L").Cut
+    Columns("D:D").Insert Shift:=xlToRight
+    Columns("I:I").Cut
+    Columns("E:E").Insert Shift:=xlToRight
+    
+    'Prepare for table
+     Range("A1").FormulaR1C1 = "ID"
+    Range("B1").FormulaR1C1 = "Brand"
+    Range("C1:C2").Copy
+    Range("A1:A2").Select
+    Selection.PasteSpecial Paste:=xlPasteFormats
+     Range("C1:C2").Copy
+    Range("B1:B2").Select
+    Selection.PasteSpecial Paste:=xlPasteFormats
+    
+    'Autofilter
+    Range("C1").AutoFilter
+    'Delete rows
+    Rows("2:2").Select
+    Selection.delete Shift:=xlUp
+    
+    'Hide empty values
+    FirstCell = Range("c2").Row
+    LastCell = Range("c2").End(xlDown).Row
+    Dim myrange As Range
+    Set myrange = Range(Cells(FirstCell, 5), Cells(LastCell, 5))
+    Dim Emptycell As Range
+    For Each Emptycell In myrange
+    If Emptycell.Value = vbNullString Then
+    Emptycell.EntireRow.Hidden = True
+    End If
+    Next Emptycell
+    'Copy first 4 rows
+    Range(Cells(FirstCell, 1), Cells(LastCell, 4)).SpecialCells(xlCellTypeVisible).Copy
+    
+    
+    Sheets("Stan zapasów").Select
+    
+    
+    RapEnd = Range("A10000").End(xlUp).Offset(1, 0).Row
+    Cells(RapEnd, 1).PasteSpecial Paste:=xlPasteValues
+    
+    LastCell = Range("A1").End(xlDown).Row
+    
+    Sheets("DostawaAR").Select
+    
+    FirstCell = Range("c2").Row
+    LastCell = Range("c2").End(xlDown).Row
+    
+    Range(Cells(FirstCell, 1), Cells(LastCell, 5)).SpecialCells(xlCellTypeVisible).Copy
+    Sheets("Dostawa").Select
+    RapEnd = Range("A10000").End(xlUp).Offset(1, 0).Row
+    Cells(RapEnd, 1).PasteSpecial Paste:=xlPasteValues
+    
+    Worksheets("kontrol").Select
+    
+    Application.ScreenUpdating = True
+    
+End Sub
+Sub Format_Esth()
+    
+    Application.ScreenUpdating = False
+    
+    Columns("A:Z").EntireColumn.Hidden = False
+    
+    Worksheets("DostawaEsth").Select
+
+    'Clear
+    ActiveSheet.Shapes.Range(Array("Image 4")).delete
+    Rows("1:6").delete Shift:=xlUp
+
+    'Add columns
+     Columns("A:A").Insert Shift:=xlToRight
+    Columns("A:A").Insert Shift:=xlToRight
+    
+    FirstCell = Range("c2").Row
+    LastCell = Range("c2").End(xlDown).Offset(-1, 0).Row
+     
+    'Add Id
+     Range("B2").FormulaR1C1 = "=MID(RC[3],3,LEN(RC[3]))"
+    Range("B2").AutoFill Destination:=Range(Cells(FirstCell, 2), Cells(LastCell, 2))
+    
+    'Input name brand
+    Range("A2").FormulaR1C1 = "E"
+    Range("A2").AutoFill Destination:=Range(Cells(FirstCell, 1), Cells(LastCell, 1))
+    
+    'Change order
+    Columns("A:A").Cut
+    Columns("C:C").Insert Shift:=xlToRight
+    Columns("F:F").Cut
+    Columns("C:C").Insert Shift:=xlToRight
+    Columns("J:J").Cut
+    Columns("D:D").Insert Shift:=xlToRight
+    Columns("J:J").Cut
+    Columns("E:E").Insert Shift:=xlToRight
+    
+    'Prepare for table
+    Range("A1").FormulaR1C1 = "ID"
+    Range("B1").FormulaR1C1 = "Brand"
+    
+    'Hide empty values
+    FirstCell = Range("c2").Row
+    LastCell = Range("c2").End(xlDown).Row
+    Dim myrange As Range
+    Set myrange = Range(Cells(FirstCell, 5), Cells(LastCell, 5))
+    Dim Emptycell As Range
+    For Each Emptycell In myrange
+    If Emptycell.Value = 0 Then
+    Emptycell.EntireRow.Hidden = True
+    End If
+    Next Emptycell
+    
+    Range(Cells(FirstCell, 1), Cells(LastCell, 4)).SpecialCells(xlCellTypeVisible).Copy
+    Sheets("Stan zapasów").Select
+    RapEnd = Range("A10000").End(xlUp).Offset(1, 0).Row
+    Cells(RapEnd, 1).PasteSpecial Paste:=xlPasteValues
+    
+    Sheets("DostawaEsth").Select
+    
+    
+    Range(Cells(FirstCell, 1), Cells(LastCell, 5)).SpecialCells(xlCellTypeVisible).Copy
+    Sheets("Dostawa").Select
+    RapEnd = Range("A10000").End(xlUp).Offset(1, 0).Row
+    Cells(RapEnd, 1).PasteSpecial Paste:=xlPasteValues
+
+    Worksheets("kontrol").Select
+    
+    Application.ScreenUpdating = True
+    
+End Sub
+Sub Filter()
+
+    Worksheets("Stan zapasów").Select
+    FilterSt = Range("A2").Row
+    FilterEn = Range("A1").End(xlDown).Row
+    
+    Dim A As Range
+
+    Dim BadProduct As Range
+    
+    Set A = Range(Cells(FilterSt, 5), Cells(FilterEn, 5))
+
+  Application.ScreenUpdating = False
+  For Each BadProduct In A
+    If BadProduct.Value = "B" Or BadProduct.Value = "E" Or BadProduct.Value = "M" Or BadProduct.Value = "M" Then
+      BadProduct.EntireRow.Hidden = True
+    End If
+  Next BadProduct
+    
+    'Copy the range
+    Range(Cells(FilterSt, 1), Cells(FilterEn, 1)).SpecialCells(xlCellTypeVisible).Copy
+    Sheets("Wyniki").Select
+    Range("A2").PasteSpecial Paste:=xlPasteValues
+    
+    'Remove duplicates
+    FilterEn = Range("a1").End(xlDown).Row
+    ActiveSheet.Range(Cells(1, 1), Cells(FilterEn, 1)).RemoveDuplicates Columns:=1, Header:=xlYes
+
+    Worksheets("kontrol").Select
+    
+    
+    
+    Application.ScreenUpdating = True
+    
+End Sub
+Sub Sumif_vlookup()
+
+    Application.ScreenUpdating = False
+    Worksheets("Stan zapasów").Select
+    'Convert to table
+    Worksheets("Stan zapasów").ListObjects.Add(xlSrcRange, Range("A1").CurrentRegion, , xlYes).Name = _
+        "Table1"
+    Range("Table1[#All]").Select
+    ActiveSheet.ListObjects("Table1").TableStyle = "TableStyleLight1"
+    
+    Worksheets("Wyniki").Select
+    
+    FilterEn = Worksheets("Wyniki").Range("a1").End(xlDown).Row
+    
+    'Vlook up for kod brand
+    Range("B2").FormulaR1C1 = "=VLOOKUP(RC[-1],Table1[#All],2,0)"
+    Range("B2").AutoFill Destination:=Range(Cells(2, 2), Cells(FilterEn, 2))
+
+    'Vlookup for 'opis
+    Range("c2").FormulaR1C1 = "=VLOOKUP(RC[-2],Table1[#All],3,0)"
+    Range("C2").AutoFill Destination:=Range(Cells(2, 3), Cells(FilterEn, 3))
+    
+    'Vlookup for price
+    Range("D2").FormulaR1C1 = "=VLOOKUP(RC[-3],Table1[#All],4,0)"
+    Range("D2").AutoFill Destination:=Range(Cells(2, 4), Cells(FilterEn, 4))
+    
+    'Vlookup for suma zapasów
+    Range("E2").FormulaR1C1 = _
+        "=SUMIF(Table1[Numer zapasu],Wyniki!RC1,Table1[Suma zapasów])"
+    Range("E2").AutoFill Destination:=Range(Cells(2, 5), Cells(FilterEn, 5))
+    
+    'Vlookup for dostawa
+    Range("F2").FormulaR1C1 = "=SUMIF(Dostawa_1[Numer zapasu],Wyniki!RC1,Dostawa_1[Zapasy])"
+    Range("F2").AutoFill Destination:=Range(Cells(2, 6), Cells(FilterEn, 6))
+    
+    'Sum
+    Range("G2").FormulaR1C1 = "=SUM(RC[-2],RC[-1])"
+    Range("G2").AutoFill Destination:=Range(Cells(2, 7), Cells(FilterEn, 7))
+    
+    'Multiply
+    Range("H2").FormulaR1C1 = "=RC[-1]*RC[-4]"
+    Range("H2").AutoFill Destination:=Range(Cells(2, 8), Cells(FilterEn, 8))
+    Range(Cells(2, 8), Cells(FilterEn, 8)).NumberFormat = "#,##0.00 $"
+    
+    Worksheets("kontrol").Select
+    
+    Application.ScreenUpdating = True
+End Sub
+Sub dostawa()
+
+Sheets("Dostawa").Select
+ActiveSheet.ListObjects.Add(xlSrcRange, Range("a1").CurrentRegion, , xlYes).Name = _
+        "Dostawa_1"
+    ActiveSheet.ListObjects("Dostawa_1").TableStyle = "TableStyleLight1"
+Sheets("kontrol").Select
+End Sub
+
+Sub delete()
+Application.DisplayAlerts = False
+
+Sheets("DostawaAR").delete
+
+Application.DisplayAlerts = True
+
+
+Application.DisplayAlerts = False
+
+Sheets("DostawaEsth").delete
+
+Application.DisplayAlerts = True
+
+Application.DisplayAlerts = False
+
+Sheets("Stan zapasów").delete
+
+Application.DisplayAlerts = True
+
+End Sub
+Sub Esthe()
+
+    Application.ScreenUpdating = False
+  Worksheets("Wyniki").Select
+    
+    'Filter Esthederm
+    Range("A1").AutoFilter
+    ActiveSheet.Range("$A$1:$H$352").AutoFilter Field:=2, Criteria1:= _
+        "ESTHEDERM"
+    
+    'Copy
+    Range("A1").CurrentRegion.SpecialCells(xlCellTypeVisible).Copy
+    Sheets("Esthederm").Select
+    Range("A1").Select
+    
+    'And paste
+    ActiveSheet.Paste
+    Sheets("Wyniki").Range("$A$1:$H$352").AutoFilter Field:=2
+    
+    'Autofit
+    Columns("A:H").EntireColumn.AutoFit
+    
+    Worksheets("kontrol").Select
+
+    Application.ScreenUpdating = True
+End Sub
+Sub Biod()
+
+    Application.ScreenUpdating = False
+    Worksheets("Wyniki").Select
+    'Filter Esthederm
+    Range("A1").AutoFilter
+    ActiveSheet.Range("$A$1:$H$352").AutoFilter Field:=2, Criteria1:= _
+        "BIODERMA"
+    'Copy
+    Range("A1").CurrentRegion.SpecialCells(xlCellTypeVisible).Copy
+    Sheets("Bioderma").Select
+    Range("A1").Select
+    
+    'And paste
+    ActiveSheet.Paste
+    Sheets("Wyniki").Range("$A$1:$H$352").AutoFilter Field:=2
+    
+    'Autofit
+    Columns("A:H").EntireColumn.AutoFit
+    
+    Worksheets("kontrol").Select
+
+    Application.ScreenUpdating = True
+End Sub
+
+
+
+

@@ -1,0 +1,435 @@
+Public myFinString As String
+Public CountEmpty As Long
+Public DateToAdd As String
+Sub Rearrange()
+
+Dim diaFolder As FileDialog
+Dim fle As String
+Dim wbTempName As String
+Dim dTime As Double
+Dim myEvent As String
+
+'Setting an event and adding a timer
+myEvent = MsgBox("Before running make sure to have updated top 10 vendors table" & vbNewLine & "As well make sure to have this file in a proper folder" & vbNewLine & "Do you want to run the macro now?", vbYesNo, "Ecart Prix")
+StartTime = Timer
+CurDate = Now()
+LeftDateToAdd = Left(CurDate, 10)
+DateToAdd = Format(LeftDateToAdd, "dd.mm.yyyy") 
+With Application
+    .ScreenUpdating = False
+    .DisplayAlerts = False
+End With
+
+'When yes - open a folder with the report
+If myEvent = vbYes Then
+
+        MsgBox "Select crude raport"
+
+        Set diaFolder = Application.FileDialog(msoFileDialogFilePicker)
+        diaFolder.AllowMultiSelect = False
+        diaFolder.Show
+
+        fle = diaFolder.SelectedItems(1)
+             mySign = InStrRev(fle, "\")
+        MidEnd = Len(fle)
+        myFolderName = Mid(fle, mySign + 1, MidEnd)
+        
+wbTempName = ThisWorkbook.Name
+
+'Open crude file and copy the data
+Dim RepTable As Range
+
+Workbooks.Open (fle)
+
+Set RepTable = Sheets("Sheet1").Range("a1").CurrentRegion.Offset(1, 0)
+RepTable.Copy
+
+'Import data
+Workbooks(wbTempName).Activate
+Sheets.Add.Name = "Reply in WF"
+
+Dim Temp As Worksheet
+Dim ColTemp As Long, RowTemp As Long
+Dim ColArr1 As Variant
+Dim ColConv As Range
+Dim TempAll As Variant
+Dim EmpCell As Variant
+
+'All the conversion within the "Temp"
+Set Temp = Worksheets("Template&MacroButton")
+Temp.Activate
+ColArr1 = Array(5, 6, 12)
+ColArr2 = Array(1, 18)
+    With Temp
+        .Paste Range("d2")
+Workbooks(myFolderName).Close savechanges:=False
+        TempAll = Range("A1").CurrentRegion
+        ColTemp = UBound(TempAll, 2)
+        RowTemp = UBound(TempAll)
+         .Range(Cells(2, ColTemp - 7), Cells(RowTemp, ColTemp)).Cut _
+        Destination:=Range(Cells(2, ColTemp - 6), Cells(RowTemp, ColTemp))
+        .Range("R2").FormulaR1C1 = "=LEFT(RC[-1],4)"
+        .Range("R2").AutoFill Destination:=Range("R2:R" & RowTemp)
+        
+            For i = LBound(ColArr1) To UBound(ColArr1)
+                Set ColConv = Columns(ColArr1(i))
+                    With ColConv
+                        .NumberFormat = "#"
+                        .Value = .Value
+                    End With
+            Next i
+            
+        .Range("A2").FormulaR1C1 = "=RC[4]&RC[9]"
+        .Range("A2").AutoFill Destination:=Range("A2:A" & RowTemp)
+            
+            For i2 = LBound(ColArr2) To UBound(ColArr2)
+                Set ColConv = Columns(ColArr2(i2))
+                    With ColConv
+                        .NumberFormat = "#"
+                        .Value = .Value
+                    End With
+            Next i2
+        
+        [P2:P150000].Replace 0, "", 1
+        
+    End With
+    
+i = vbnullvalue
+
+Dim DiffRanges As Range
+Dim CheckRange As Variant
+Dim AddRangeArr() As Variant
+Dim TrgRange As Range
+Dim NegArr As Variant
+
+Dim LastRow As Long
+
+Dim shTotal As Worksheet
+
+Dim dict As New Scripting.Dictionary
+
+Dim SiteLegacyRange As Range
+Dim EasierMappingTableRg As Range
+Dim targetRange As Range
+
+Dim MappingTbSh As Worksheet
+
+Dim SiteLegacyArr As Variant
+Dim MyValue As Variant
+
+Dim LastRowMappingTB As Double
+Dim LastRowTotalSH As Double
+Dim x As Integer
+
+'Table to search through VLOOKUP
+LastRowTotalSH = Temp.Range("R" & Rows.Count).End(xlUp).Row
+Set SiteLegacyRange = Temp.Range("R2:R" & LastRowTotalSH)
+
+'Table to search for VLOOKUP
+Set MappingTbSh = Worksheets("Easier Mapping table")
+LastRowMappingTB = MappingTbSh.Range("A" & Rows.Count).End(xlUp).Row
+Set EasierMappingTableRg = MappingTbSh.Range("A1:E" & LastRowMappingTB)
+
+myarr = EasierMappingTableRg.Value
+
+Application.Calculation = xlCalculationManual
+
+For Each r In EasierMappingTableRg.Rows
+    dict.Add r.Cells(1, 1).Value, r.Cells(1, 5)
+Next r
+
+ For x = 1 To dict.Count - 1
+Debug.Print dict.Keys()(x), dict.Items(x)
+Next x
+
+ReDim SiteLegacyArr(1 To LastRowTotalSH, 1 To 1)
+
+i = 1
+
+For Each c1 In SiteLegacyRange
+    
+    Application.StatusBar = "updating: " & i
+    SiteLegacyArr(i, 1) = dict(c1.Value)
+    Debug.Print SiteLegacyArr(i, 1)
+    i = i + 1
+    
+Next c1
+
+Set targetRange = Temp.Range("C2").Resize(UBound(SiteLegacyArr, 1) - 1)
+targetRange = SiteLegacyArr
+
+
+'Checking the differences between values
+LastRow = Temp.Range("O" & Rows.Count).End(xlUp).Row
+CheckRange = Temp.Range("N2:O" & LastRow).Value
+
+Dim cR As Long
+
+For cR = LBound(CheckRange) To UBound(CheckRange)
+    
+    Application.StatusBar = "updating: " & cR
+    
+     ReDim Preserve AddRangeArr(1 To UBound(CheckRange), 1 To 2)
+     AddRangeArr(cR, 1) = CheckRange(cR, 1) - CheckRange(cR, 2)
+    Debug.Print AddRangeArr(cR, 1)
+
+Next cR
+
+Set TrgRange = Temp.Range("A2:Z" & UBound(AddRangeArr) + 1)
+
+i = vbnullvalue
+
+With TrgRange
+    .Columns(26) = AddRangeArr
+    .Sort Key1:=Range("Z2"), order1:=xlAscending
+
+    For Each minusvalue In TrgRange.Columns(26).Value
+        
+        If minusvalue < 0 Then
+            i = i + 1
+        Else
+            y = y + 1
+        End If
+        
+    Next minusvalue
+    
+    Dim EanDict As New Scripting.Dictionary
+
+    'Adding minus & copy & paste - TOTAL and finding EAN
+    Sheets.Add.Name = "Total"
+    Dim wsMinus As Worksheet
+    Set wsMinus = Sheets("Total")
+    NegArr = Temp.Range("A1:Y" & i + 1).SpecialCells(xlCellTypeVisible).Copy
+    
+        On Error Resume Next
+        
+        With wsMinus
+            .Paste Range("A1:Y" & i + 1)
+        End With
+        
+         Application.CutCopyMode = False
+        
+        wsMinus.Range("a1").CurrentRegion.AutoFilter field:=12, Criteria1:=""
+        
+    Dim EanCdeRg As Range
+Dim HideColArr As Variant
+    HideCol = Array(12, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26)
+        For hc = 1 To UBound(HideCol)
+            Columns(HideCol(hc)).Hidden = True
+        Next hc
+        
+    Set wsMinus = Sheets("Total")
+    Dim DupliVendor As Long
+    Set EanCdeRg = wsMinus.Range("A1").CurrentRegion.Offset(1, 0).SpecialCells(xlCellTypeVisible)
+    Dim VendArr() As Variant
+    Dim LastRowVAftDupli As Long
+    
+    With EanCdeRg
+        CountEmpty = .Count - 1
+    End With
+
+EanCdeRg.Copy Sheets("Vendor Table").Range("D1")
+
+LastRowV = Sheets("Vendor Table").Range("D" & Rows.Count).End(xlUp).Row
+Sheets("Vendor Table").Range("D1:D" & LastRowV).RemoveDuplicates Columns:=1, Header:=xlNo
+LastRowVAftDupli = Sheets("Vendor Table").Range("D" & Rows.Count).End(xlUp).Row
+
+For DupliVendor = 1 To LastRowVAftDupli
+
+ReDim Preserve VendArr(DupliVendor)
+VendArr(DupliVendor) = Sheets("Vendor Table").Range("D" & DupliVendor)
+myFinString = VendArr(DupliVendor) & Chr(2) & " " & myFinString
+Next DupliVendor
+
+
+
+MsgBox myFinString
+        End With
+
+    
+    Sheets("Total").Columns.EntireColumn.Hidden = False
+    Sheets("Total").Rows.EntireRow.Hidden = False
+    Sheets("Total").ShowAllData
+    Temp.Select
+    Temp.Range("A1").CurrentRegion.Sort Key1:=Range("Z2"), order1:=xlDescending, Header:=xlYes
+    
+    'Adding positive & copy & paste - PRIX IN OUR FAVOUR
+    Sheets.Add.Name = "Prix in our favour"
+    Dim wsPositive As Worksheet
+    Set wsPositive = Sheets("Prix in our favour")
+    PosArr = Temp.Range("A1:Y" & y + 1).SpecialCells(xlCellTypeVisible).Copy
+    With wsPositive
+        .Paste Range("A1:Y" & y + 1)
+    End With
+    Application.CutCopyMode = False
+    
+
+'Searching for greater than 0
+Set inserted = Temp.Range("a1:Y" & RowTemp)
+
+With inserted
+        .AutoFilter field:=16, Criteria1:=">0"
+        .SpecialCells(xlCellTypeVisible).Copy _
+        Destination:=Worksheets("Reply in WF").Range("a1")
+        .Offset(1).Delete xlShiftUp
+        .AutoFilter
+End With
+
+        'Temp.Select
+        'Temp.Range(Cells(1, 1), Cells(1, LastColumnTemp)).Copy Worksheets("Prix on our favour").Range("A1")
+        
+ Dim VendorWorkBooksCreation As Range
+ Dim VendorTable As Worksheet
+ Dim ws As Worksheet
+ Dim wb As Workbook
+ Dim NewWorkSheet As Range
+ Dim vendor As Integer
+ 
+SelectAgain:
+
+
+'select the table range with top 10
+Application.ScreenUpdating = True
+Set SelectACells = Application.InputBox("Select range with top 10 vendors in format Code/Name excluding the headers", "Select cells", Type:=8)
+If SelectACells Is Nothing Then
+MsgBox ("You have not selected anything")
+GoTo SelectAgain
+
+End If
+Application.ScreenUpdating = False
+
+Dim fPath As String
+fPath = Application.ActiveWorkbook.Path
+   
+Sheets("Total").Columns.EntireColumn.Hidden = False
+Sheets("Total").Rows.EntireRow.Hidden = False
+
+For vendor = 1 To 10
+    
+    FilterCode = SelectACells(vendor, 1)
+    NameOfVendor = SelectACells(vendor, 2)
+    Sheets.Add.Name = NameOfVendor
+    
+    Set NewWorkSheet = Worksheets(NameOfVendor).Range("a1")
+    LastRowFilter = Worksheets(NameOfVendor).UsedRange.Columns.Count
+    Set FilterVendors = Sheets("Total").Range("A1:Y" & i + 1)
+    
+        With FilterVendors
+            .AutoFilter field:=6, Criteria1:=FilterCode
+            .Copy Destination:=NewWorkSheet
+            .Select
+            .AutoFilter
+             If NewWorkSheet.Range("G2").Value = "" Then
+            Application.DisplayAlerts = False
+                Sheets(NameOfVendor).Delete
+                Application.DisplayAlerts = True
+                Workbooks(fPath & "\" & NameOfVendor & ".xlsx").Close False
+                Kill fPath & "\" & NameOfVendor & ".xlsx"
+                GoTo lup
+
+            End If
+            
+        End With
+        
+        
+        
+        Dim ColumnCounter As Integer
+        
+        For ColumnCounter = 1 To Temp.UsedRange.Columns.Count
+            Worksheets(NameOfVendor).Columns(ColumnCounter).AutoFit
+        Next ColumnCounter
+        
+        Worksheets(NameOfVendor).Copy
+        
+        Application.ActiveWorkbook.SaveAs Filename:=fPath & "\" & NameOfVendor & ".xlsx"
+        Application.ActiveWorkbook.Close False
+        Application.DisplayAlerts = False
+        Worksheets(NameOfVendor).Delete
+        Application.DisplayAlerts = True
+        
+lup:
+Next vendor
+
+'********AUTOFIT*******
+
+        For ColumnCounter = 1 To Temp.UsedRange.Columns.Count
+            Worksheets("Total").Columns(ColumnCounter).AutoFit
+            Worksheets("Reply in WF").Columns(ColumnCounter).AutoFit
+            Worksheets("Prix in our favour").Columns(ColumnCounter).AutoFit
+        Next ColumnCounter
+        
+        Worksheets("Total").Select
+        ActiveSheet.Move
+        Application.ActiveWorkbook.SaveAs Filename:=fPath & "\" & "Ecart Prix Brico Depot FR Total " & DateToAdd & ".xlsx"
+        Application.ActiveWorkbook.Close False
+        Worksheets("Prix in our favour").Select
+        ActiveSheet.Move
+         Application.ActiveWorkbook.SaveAs Filename:=fPath & "\" & "Prix in our favour " & DateToAdd & ".xlsx"
+        Application.ActiveWorkbook.Close False
+        Worksheets("Reply in WF").Select
+         ActiveSheet.Move
+        Application.ActiveWorkbook.SaveAs Filename:=fPath & "\" & "Reply in WF " & DateToAdd & ".xlsx"
+        Application.ActiveWorkbook.Close False
+        
+        Temp.Range("a1").CurrentRegion.Offset(1, 0).Clear
+        Sheets("Vendor Table").Range("a1").CurrentRegion.Offset(1, 0).Clear
+        Sheets("Vendor Table").Range("D1:D150").Clear
+        
+With Application
+    .ScreenUpdating = True
+    .Calculation = xlCalculationAutomatic
+    .DisplayAlerts = True
+End With
+
+MinutesElapsed = Format((Timer - StartTime) / 86400, "hh:mm:ss")
+
+MsgBox "This code ran successfully in " & MinutesElapsed & " minutes", vbInformation
+
+
+Call EmailRoutine
+End If
+
+End Sub
+
+Sub EmailRoutine()
+
+
+Dim objOutlook As Object
+Set objOutlook = CreateObject("Outlook.Application")
+
+Dim objEmail As Object
+Set objEmail = objOutlook.CreateItem(olMailItem)
+    
+MsgBox "Select a files to attach"
+    
+Set fd = Application.FileDialog(msoFileDialogFilePicker)
+
+
+Dim vrtSelectedItems As Variant
+
+With fd
+
+    .AllowMultiSelect = True
+    If .Show = -1 Then
+
+        With objEmail
+        .Subject = "Ecart Prix " & DateToAdd
+        .Body = "Dear Franck and Team, " & vbNewLine & "Please find attached the files with the items waiting for the price approval for the following vendors:" & vbNewLine & _
+        "We are also including the global file with the items pending price approval" & vbNewLine & _
+        "Please be informed that for " & CountEmpty & " lines in the total report ( vendors: " & myFinString & " ) report has not generated EAN numbers."
+        
+        For Each vrtSelectedItems In fd.SelectedItems
+            .Attachments.Add vrtSelectedItems
+        Next
+        .Display        ' Display the message in Outlook.
+    End With
+    
+Else
+
+End If
+
+End With
+
+Set objEmail = Nothing:    Set objOutlook = Nothing: Set fd = Nothing
+
+End Sub

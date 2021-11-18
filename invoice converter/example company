@@ -1,0 +1,41 @@
+Sub ExampleCompany()
+
+Set tab1 = Worksheets("Table 1")
+Set AllSAP = Workbooks("FactureSAPKK").Worksheets("Collect Data")
+    
+PossiblePOs = Array(2, 5)
+
+    For nextPO = 0 To 1
+    
+        POsequence = PossiblePOs(nextPO) & "#####"
+        
+        ZoomY = ZoomFacture("Bon*ison", POsequence, 1, 1, 6)
+    
+    Next nextPO
+
+    MyFacture = MyNumber
+    MsgBox MyFacture
+    
+    ZoomX = ZoomPO("Réf*Client")
+    myPO = POValue
+    MsgBox myPO
+    
+    Zoom = ZoomTotal("Total T*", 0, 10, 15)
+    MyTotal = HighestValue
+    MsgBox MyTotal
+    
+'Input the variables
+
+    AllSAP.Range("A" & nLineCollect).value = MyFacture
+    AllSAP.Range("B" & nLineCollect).value = myPO
+    AllSAP.Range("C" & nLineCollect).value = MyTotal
+    
+'Eventual modification of the text
+
+    AllSAP.Range("E" & nLineCollect).FormulaR1C1 = "=RC[-2]-(RC[-2]/1.2)"
+    AllSAP.Range("F" & nLineCollect).FormulaR1C1 = nfile
+ 
+
+Call CloseAndLoop
+
+End Sub

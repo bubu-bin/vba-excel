@@ -1,0 +1,244 @@
+Sub Auto()
+
+x = 5
+
+Application.ScreenUpdating = False
+
+start:
+On Error Resume Next
+
+    myFolder = Range("A1")
+    
+    'Specify File Path
+    sFilePath = "C:\Users\kasprk03\OneDrive - Kingfisher PLC\Desktop\MRdownload\Test"
+    
+     'Check for back slash
+    If Right(sFilePath, 1) <> "\" Then
+        sFilePath = sFilePath & "\"
+    End If
+        
+    sFileName = Dir(sFilePath & "*.xlsb")
+    Debug.Print sFileName
+    
+    Do While Len(sFileName) > 0
+
+        If Right(sFileName, 4) = "xlsb" Then
+            FullName = sFilePath & sFileName
+            wbClose = sFileName
+            'Set the fileName to the next available file
+        
+        PropDate = Mid(sFileName, InStrRev(sFileName, "Report") + 7, 21)
+        PropName = Mid(sFileName, 1, InStrRev(sFileName, "GFR") - 2)
+        Debug.Print PropDate
+        Debug.Print PropName
+        sFileName = Dir
+        End If
+
+Workbooks.Open FullName
+    
+    Worksheets("VendorReport").Select
+    LastRow = Range("A2").End(xlDown).Row
+    
+    
+    Set temp = Workbooks("MR_Reports_File.xlsm")
+    Set dC = temp.Worksheets("Reports Summary")
+    SumPosted = WorksheetFunction.Sum(Range("E2:E" & LastRow))
+    SumAutoMatched = WorksheetFunction.Sum(Range("H2:H" & LastRow))
+    SumBlocked = WorksheetFunction.Sum(Range("I2:I" & LastRow))
+    SumTouchedInvoices = WorksheetFunction.Sum(Range("J2:J" & LastRow))
+    SumNumberOfTouches = WorksheetFunction.Sum(Range("K2:ZZ" & LastRow))
+    
+    Set findDate = dC.Range("C:C").Find(What:=PropDate, LookIn:=xlValues)
+    
+    RowNumber = findDate.Row
+    Debug.Print RowNumber
+
+    x = x + 1
+    
+    If Not findDate Is Nothing Then
+        
+        If PropName = "B&Q" Then
+
+            dC.Range("E" & RowNumber) = SumPosted
+            dC.Range("F" & RowNumber) = SumAutoMatched
+            dC.Range("G" & RowNumber) = SumBlocked
+            dC.Range("H" & RowNumber) = SumTouchedInvoices
+            dC.Range("I" & RowNumber) = SumNumberOfTouches
+            
+        ElseIf PropName = "Casto" Then
+
+            dC.Range("J" & RowNumber) = SumPosted
+            dC.Range("K" & RowNumber) = SumAutoMatched
+            dC.Range("L" & RowNumber) = SumBlocked
+            dC.Range("M" & RowNumber) = SumTouchedInvoices
+            dC.Range("N" & RowNumber) = SumNumberOfTouches
+            
+         ElseIf PropName = "PL" Then
+
+            dC.Range("T" & RowNumber) = SumPosted
+            dC.Range("U" & RowNumber) = SumAutoMatched
+            dC.Range("V" & RowNumber) = SumBlocked
+            dC.Range("W" & RowNumber) = SumTouchedInvoices
+            dC.Range("X" & RowNumber) = SumNumberOfTouches
+            
+        ElseIf PropName = "ROM" Then
+
+            dC.Range("O" & RowNumber) = SumPosted
+            dC.Range("P" & RowNumber) = SumAutoMatched
+            dC.Range("Q" & RowNumber) = SumBlocked
+            dC.Range("R" & RowNumber) = SumTouchedInvoices
+            dC.Range("S" & RowNumber) = SumNumberOfTouches
+    
+        End If
+        
+    End If
+    
+    If findDate Is Nothing Then
+    
+        If PropName = "B&Q" Then
+    
+            dC.Range("C" & x) = PropDate
+            dC.Range("E" & x) = SumPosted
+            dC.Range("F" & x) = SumAutoMatched
+            dC.Range("G" & x) = SumBlocked
+            dC.Range("H" & x) = SumTouchedInvoices
+            dC.Range("I" & x) = SumNumberOfTouches
+    
+        ElseIf PropName = "Casto" Then
+    
+            dC.Range("C" & x) = PropDate
+            dC.Range("J" & x) = SumPosted
+            dC.Range("K" & x) = SumAutoMatched
+            dC.Range("L" & x) = SumBlocked
+            dC.Range("M" & x) = SumTouchedInvoices
+            dC.Range("N" & x) = SumNumberOfTouches
+        
+        ElseIf PropName = "PL" Then
+    
+            dC.Range("C" & x) = PropDate
+            dC.Range("T" & x) = SumPosted
+            dC.Range("U" & x) = SumAutoMatched
+            dC.Range("V" & x) = SumBlocked
+            dC.Range("W" & x) = SumTouchedInvoices
+            dC.Range("X" & x) = SumNumberOfTouches
+        
+        ElseIf PropName = "ROM" Then
+    
+            dC.Range("C" & x) = PropDate
+            dC.Range("O" & x) = SumPosted
+            dC.Range("P" & x) = SumAutoMatched
+            dC.Range("Q" & x) = SumBlocked
+            dC.Range("R" & x) = SumTouchedInvoices
+            dC.Range("S" & x) = SumNumberOfTouches
+            
+        End If
+    
+        
+        
+    End If
+
+   
+Workbooks(wbClose).Close SaveChanges:=False
+
+
+Loop
+
+Call DateSorting
+Call Formatting
+Call Archive
+
+
+Application.ScreenUpdating = True
+
+
+End Sub
+Sub DateSorting()
+    
+    LastRow = Cells(Rows.Count, 3).End(xlUp).Row
+    
+    On Error Resume Next
+    
+    Set s2Range = Range("C6:C" & LastRow)
+    s2Range.Select
+    s2Range.SpecialCells(xlCellTypeBlanks).EntireRow.Delete
+    
+    LastRow = Cells(Rows.Count, 3).End(xlUp).Row
+    
+    For x = 6 To LastRow
+    
+        Range("Y" & x).FormulaR1C1 = "=LEFT(RC[-22],10)"
+        Range("Z" & x).FormulaR1C1 = "=SUBSTITUTE(RC[-1],""."",""/"")"
+        Range("D" & x).FormulaR1C1 = "=DATEVALUE(RC[22])"
+    
+    Next
+    
+    Range("C5:X5").AutoFilter
+    
+    ActiveWorkbook.Worksheets("Reports Summary").AutoFilter.Sort.SortFields.Clear
+    ActiveWorkbook.Worksheets("Reports Summary").AutoFilter.Sort.SortFields.Add2 _
+        Key:=Range("D5"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption _
+        :=xlSortNormal
+    With ActiveWorkbook.Worksheets("Reports Summary").AutoFilter.Sort
+        .Header = xlYes
+        .MatchCase = False
+        .Orientation = xlTopToBottom
+        .SortMethod = xlPinYin
+        .Apply
+    End With
+    
+    s2Range.Offset(0, 1).Copy
+    s2Range.Offset(0, 1).PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+    
+    Columns("Y:Z").Delete
+    
+    Range("C5:X5").AutoFilter
+    
+
+End Sub
+Sub Formatting()
+    
+    LastRow = Range("C5").End(xlDown).Row
+    
+    Columns("D:D").NumberFormat = "m/d/yyyy"
+    
+    Set wsColor = Worksheets("Color")
+    Set wsRs = Worksheets("Reports Summary")
+    
+    wsColor.Visible = True
+    
+    wsColor.Select
+    
+    Range("A1:V1").Copy
+    
+    wsRs.Select
+    
+    Range("C6:X" & LastRow).PasteSpecial Paste:=xlPasteFormats, Operation:=xlNone, _
+        SkipBlanks:=False, Transpose:=False
+        
+    Application.CutCopyMode = False
+    
+    Range("C" & LastRow + 1 & ":X1000").Delete
+
+    wsColor.Visible = False
+    
+End Sub
+Sub Archive()
+
+    Set wsArchive = Worksheets("Archive")
+    Set wsRs = Worksheets("Reports Summary")
+    
+    wsRs.Select
+    
+    LastRow = Range("C5").End(xlDown).Row
+    
+    Range("C6:X" & LastRow).Copy
+    
+    wsArchive.Select
+    
+    LastRow = Range("C15000").End(xlUp).Row
+    
+    Range("C" & LastRow + 1 & ":X" & LastRow + 1).PasteSpecial Paste:=xlPasteAll, Operation:=xlNone, _
+        SkipBlanks:=False, Transpose:=False
+    
+End Sub

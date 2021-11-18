@@ -1,0 +1,292 @@
+Sub OnDaBlok()
+
+Dim myevent As String
+Dim StartTime As Long
+'Setting an event and adding a timer
+myevent = MsgBox("Blocks report" & vbNewLine & "Do you want to run the macro now?", vbYesNo, "Blocks")
+StartTime = Timer
+
+With Application
+    .ScreenUpdating = False
+    .DisplayAlerts = False
+    .Calculation = xlCalculationManual
+End With
+
+''Open the file from the previous weekend
+If myevent = vbYes Then
+
+Dim shUsers As Worksheet, shData As Worksheet, shPrev As Worksheet, Template As Worksheet
+Dim isToday As String
+Dim shDataName As String
+
+Set Template = Worksheets("Template")
+'Setting names of the worksheets and creating them
+'sheets with crude raport
+isToday = Date
+Sheets.Add After:=Sheets(Sheets.Count)
+ActiveSheet.Name = Format(isToday, "dd.mm.yyyy")
+shDataName = ActiveSheet.Name
+Set shData = Worksheets(shDataName)
+'Sheets user
+Sheets.Add After:=Sheets(Sheets.Count)
+ActiveSheet.Name = "Users"
+Set shUsers = Sheets("Users")
+'sheets previous report
+Sheets.Add After:=Sheets(Sheets.Count)
+ActiveSheet.Name = "Previous report"
+Set shPrev = Sheets("Previous report")
+
+
+Dim diaFolder As FileDialog
+Dim fle As String
+Dim wbTempName As String
+Dim dTime As Double
+Dim mySign As String
+Dim MidEnd As String
+Dim MyFleName As String
+Dim SelShDate As String
+
+    MsgBox "Select crude raport"
+'open file with crude raport
+      Set diaFolder = Application.FileDialog(msoFileDialogFilePicker)
+        diaFolder.AllowMultiSelect = False
+        diaFolder.Show
+
+        fle = diaFolder.SelectedItems(1)
+             mySign = InStrRev(fle, "\")
+        MidEnd = Len(fle)
+        MyFleName = Mid(fle, mySign + 1, MidEnd)
+
+        With Workbooks.Open(MyFleName)
+            With ActiveSheet.Range("A1").CurrentRegion
+            .Copy shData.Range("A1")
+            End With
+        End With
+
+        Workbooks(MyFleName).Close
+'open file from the previous weekend
+        MsgBox "Select raport from the previous weekend"
+
+        Set diaFolder = Application.FileDialog(msoFileDialogFilePicker)
+        diaFolder.AllowMultiSelect = False
+        diaFolder.Show
+
+        fle = diaFolder.SelectedItems(1)
+             mySign = InStrRev(fle, "\")
+        MidEnd = Len(fle)
+        MyFleName = Mid(fle, mySign + 1, MidEnd)
+        
+Application.ScreenUpdating = True
+
+With Workbooks.Open(MyFleName)
+    With Sheets("Users").Range("a1").CurrentRegion
+        .Copy shUsers.Range("A1")
+    End With
+    SelShDate = InputBox("Input a date from the previous weekend to access its properties")
+    With Sheets(SelShDate).Range("a1").CurrentRegion
+        .Copy shPrev.Range("A1")
+    End With
+
+End With
+
+Workbooks(MyFleName).Close
+
+Application.ScreenUpdating = False
+
+Dim AllRepData As Variant, LastRdata As Long, LastCdata As Long
+Dim ColConvArr As Variant
+Dim i As Integer
+Dim ColConv As Range
+
+ColConvArr = Array(1, 6)
+
+'Conversion, columns, importing
+With shData
+
+        Template.Range("A1").CurrentRegion.Copy _
+        Destination:=shData.Range("A1")
+        .Select
+        AllRepData = .Range("A1").CurrentRegion
+        LastRdata = UBound(AllRepData)
+        LastCdata = UBound(AllRepData, 2)
+        .Range(Cells(2, LastCdata - 18), Cells(LastRdata, LastCdata - 5)).Cut _
+        Destination:=Range(Cells(2, LastCdata - 16), Cells(LastRdata, LastCdata - 4))
+      For i = LBound(ColConvArr) To UBound(ColConvArr)
+                Set ColConv = Columns(ColConvArr(i))
+                    With ColConv
+                        .NumberFormat = "#"
+                        .Value = .Value
+                    End With
+        Next i
+
+'vlookup
+Dim dictVnom As New Scripting.Dictionary
+Dim dictVuser As New Scripting.Dictionary
+Dim TSFUsers As Range
+Dim VArrFourni As Variant
+Dim VValFourni As Range
+Dim x As Integer
+Dim TLTData As Range
+Dim VArrFourniData As Variant
+Dim F As Variant
+Dim FourniRg As Range
+
+
+'Tab to search for in users
+        Set TSFUsers = shUsers.Range("A1").CurrentRegion.Offset(1, 0)
+        'VArrFourni = TSFUsers.Value
+        
+'Tab to look through in users
+        Set TLTData = shData.Range("A1:A" & .UsedRange.Rows.Count).Offset(1, 0)
+       VArrFourniData = TLTData.Value
+        
+        For Each VValFourni In TSFUsers.Rows
+            dictVnom.Add VValFourni.Cells(1, 1).Value, VValFourni.Cells(1, 2).Value
+            dictVuser.Add VValFourni.Cells(1, 1).Value, VValFourni.Cells(1, 7).Value
+        Next VValFourni
+        
+        For x = 0 To dictVnom.Count - 1
+            Debug.Print dictVnom.Keys(x), dictVnom.Items(x)
+            Debug.Print dictVuser.Keys(x), dictVuser.Items(x)
+        Next
+ 
+        ReDim VArrFourniData(1 To .UsedRange.Rows.Count, 1 To 2)
+
+        i = 1
+        
+        On Error Resume Next
+        
+        For Each F In TLTData
+            VArrFourniData(i, 1) = dictVnom(F.Value)
+             VArrFourniData(i, 2) = dictVuser(F.Value)
+            i = i + 1
+        Next F
+        
+        Set FourniRg = .Range("B2:C" & .UsedRange.Rows.Count - 2)
+        FourniRg = VArrFourniData
+        
+Dim dictVcomm As New Scripting.Dictionary
+Dim dictVresolved As New Scripting.Dictionary
+Dim dictVowner As New Scripting.Dictionary
+        
+Dim TSFPrev As Range
+Dim TLTPrev As Range
+Dim PiesRg As Range
+
+Dim VArrPiesData As Variant
+Dim VArrPiesPrev As Variant
+Dim VValPies As Variant
+Dim P As Variant
+Dim pTeam As Variant
+
+'Tab to search for in previous
+        Set TSFPrev = shPrev.Range("A1").CurrentRegion.Offset(1, 0)
+        
+'Tab to look through in previous
+        Set TLTPrev = shData.Range("F1:F" & .UsedRange.Rows.Count).Offset(1, 0)
+       VArrPiesData = TLTPrev.Value
+        
+        For Each VValPies In TSFPrev.Rows
+        
+            dictVcomm.Add VValPies.Cells(1, 6).Value, VValPies.Cells(1, 18).Value
+            dictVresolved.Add VValPies.Cells(1, 6).Value, VValPies.Cells(1, 19).Value
+            dictVowner.Add VValPies.Cells(1, 6).Value, VValPies.Cells(1, 20).Value
+
+        Next VValPies
+ 
+        ReDim VArrPiesData(1 To .UsedRange.Rows.Count, 1 To 3)
+
+        i = 1
+        
+        On Error Resume Next
+        
+        For Each P In TLTPrev
+            VArrPiesData(i, 1) = dictVcomm(P.Value)
+            VArrPiesData(i, 2) = dictVresolved(P.Value)
+             VArrPiesData(i, 3) = dictVowner(P.Value)
+            i = i + 1
+        Next P
+        
+        Set PiesRg = .Range("R2:T" & .UsedRange.Rows.Count)
+        PiesRg = VArrPiesData
+            
+            For Each pTeam In PiesRg
+            
+Dim VisRg As Range
+Dim cRow As Integer
+Dim FillCell As Variant
+
+Dim cNumb As Integer
+'delete the payment team
+                If InStrRev(pTeam, "payment team") > 0 Then
+                    pTeam.Value = vbnullvalue
+                End If
+                
+            Next pTeam
+            
+'fill kacha and aga
+                With .Range("A1").CurrentRegion
+                     .AutoFilter Field:=20, Criteria1:=""
+                    Set VisRg = .Offset(1, 0).SpecialCells(xlCellTypeVisible)
+                    
+                    With VisRg
+                         cRow = 1
+                         lastvisrow = shData.UsedRange.Rows.Count
+                            For Each FillCell In VisRg.Rows
+                                    Debug.Print FillCell.Row
+                                    cRow = cRow + 1
+                                    If cRow Mod 2 = 0 Then
+                                            FillCell.Cells(1, 20).Value = "Aga"
+                                        Else
+                                            FillCell.Cells(1, 20).Value = "Kasia"
+                                    End If
+                                    If FillCell.Row = lastvisrow - 2 Then
+                                        Exit For
+                                    End If
+                                 Next FillCell
+                      .AutoFilter
+                    End With
+                    
+                    For cNumb = 1 To shData.UsedRange.Columns.Count
+                        shData.Columns(cNumb).AutoFit
+                    Next cNumb
+ 
+    End With
+    
+    
+    
+End With
+
+'close it and finish!
+Dim fPath As String
+fPath = Application.ActiveWorkbook.Path
+sfilename = "Blocks " & Format(isToday, "dd.mm.yyyy")
+shData.Select
+        ActiveSheet.Move
+        With Application.ActiveWorkbook
+        .SaveAs Filename:=fPath & "\" & sfilename & ".xlsx"
+        Set wbMacro = Workbooks("Blocks Macro.xlsm")
+        wbMacro.Activate
+            shUsers.Copy After:=Workbooks(sfilename & ".xlsx").Sheets(Workbooks(sfilename & ".xlsx").Sheets.Count)
+            shPrev.Copy After:=Workbooks(sfilename & ".xlsx").Sheets(Workbooks(sfilename & ".xlsx").Sheets.Count)
+        .Close True
+        End With
+
+        With ActiveWorkbook
+         shUsers.Delete
+         shPrev.Delete
+        End With
+
+With Application
+    .ScreenUpdating = True
+    .DisplayAlerts = True
+    .Calculation = xlCalculationAutomatic
+End With
+
+End If
+
+MinutesElapsed = Format((Timer - StartTime) / 86400, "hh:mm:ss")
+
+MsgBox "This code ran successfully in " & MinutesElapsed & " minutes", vbInformation
+
+End Sub

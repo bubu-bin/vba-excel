@@ -1,0 +1,398 @@
+Dim c As Integer
+Dim sFilePath As String
+Dim VendorName As String
+Public nLineCollect As Integer
+Public wbClose As String
+Public FSO
+Public myfile As String
+Public nfile
+Dim aApp As Acrobat.AcroApp
+Dim av_doc As CAcroAVDoc
+Dim pdf_doc As CAcroPDDoc
+Dim jso_obj As Object
+Dim sfile As String
+Dim dfile As String
+Dim ext As String
+Dim sFileName As String
+Public IfExists As Variant
+Public IfExistsVendorRef As Variant
+'Dodac ze public ALLSAP
+Sub OpenFolder()
+
+'SETTING THE NAMES OF THE VENDORS AND FOLDER DESTINATION
+'***********************
+
+
+Application.ScreenUpdating = False
+
+    nLineCollect = 1
+  
+        FolderName = "All Factures"
+        sFilePath = "C:\Users\gadzi\Desktop\Vendors\" & FolderName
+    
+Call PDF
+    
+    
+
+
+End Sub
+Sub PDF()
+
+'CONVERTS THE PDF INTO XLSX
+'***********************
+
+On Error Resume Next
+
+    If Right(sFilePath, 1) <> "\" Then
+    
+        sFilePath = sFilePath & "\"
+        
+    End If
+        
+    sFileName = Dir(sFilePath & "*.pdf")
+    
+
+'DO UNTIL LAST FILE IN THE FOLDER
+'***********************
+
+    Do While Len(sFileName) > 0
+    
+        If Right(sFileName, 3) = "PDF" Or Right(sFileName, 3) = "pdf" Then
+        
+            FullName = sFilePath & sFileName
+            
+            Debug.Print FullName
+
+            wbClose = sFileName
+            sFileName = Dir
+            
+        End If
+        
+    
+    NumberWhen51 = Array(48, 93, 138, 180)
+    
+    For nextNumber = 0 To 3
+    
+        If nLineCollect = NumberWhen51(nextNumber) Then
+        
+            MsgBox "CtrlAltDelete the (51)"
+        
+        End If
+    
+    Next nextNumber
+    
+    nLineCollect = nLineCollect + 1
+    ext = "xlsx"
+    
+    wbClose = Replace(wbClose, ".pdf", "." & ext, 1)
+    sfile = FullName
+    dfile = Replace(sfile, ".pdf", "." & ext, 1)
+
+'OPEN THE ADOBE
+'***********************
+
+    Set aApp = CreateObject("AcroExch.App")
+    Set av_doc = CreateObject("AcroExch.AVDoc")
+
+    If av_doc.Open(sfile, vbNull) = True Then
+
+        Set pdf_doc = av_doc.GetPDDoc
+        Set jso_obj = pdf_doc.GetJSObject
+        
+        jso_obj.SaveAs dfile, "com.adobe.acrobat." & ext
+
+    End If
+
+    nfile = Replace(sfile, ".pdf", "." & ext, 1)
+
+'OPEN WORKBOOK AND SELECT MODULE
+'***********************
+
+Workbooks.Open nfile
+
+Call IfVendorExists
+
+If VendorName = "" Then
+
+    GoTo EmptyVendorName
+
+End If
+
+Call WhichSub
+
+EmptyVendorName:
+
+    Loop
+    
+Call CollectMe
+Call AddLink
+
+Application.ScreenUpdating = True
+    
+
+
+End Sub
+Sub WhichSub()
+
+    If VendorName = "Soprema" Then
+        Call Mod_Soprema.Soprema
+    End If
+    
+    If VendorName = "Malerba" Then
+        Call Mod_Malerba.Malerba
+    End If
+    
+    If VendorName = "SP Berner" Then
+        Call Mod_Berner.Berner
+    End If
+    
+    If VendorName = "Bardahl" Then
+        Call Mod_Bardahl.Bardahl
+    End If
+    
+    If VendorName = "Karcher" Then
+        Call Mod_Karcher.Karcher
+    End If
+    
+    If VendorName = "PPHU" Then
+        Call Mod_PPHU.PPHU
+    End If
+    
+    If VendorName = "Panadero" Then
+        Call Mod_Panadero.Panadero
+    End If
+    
+    If VendorName = "Aloys" Then
+        Call Mod_Aloys.Aloys
+    End If
+    
+    If VendorName = "Renaulac" Then
+        Call Mod_Renaulac.Renaulac
+    End If
+    
+    If VendorName = "Nordlux" Then
+        Call Mod_Nordlux.Nordlux
+    End If
+    
+    VendorName = vbnullvalue
+    
+End Sub
+Sub CloseAndLoop()
+
+'CLOSE WORKBOOK AND DELETE IT FROM THE FOLDER
+'***********************
+
+    Workbooks(wbClose).Close savechanges:=False
+    
+    Dim FSO
+    Dim myfile As String
+    
+    Set FSO = CreateObject("scripting.filesystemobject")
+    myfile = nfile
+    
+    FSO.deletefile myfile, True
+    
+    av_doc.Close True
+    aApp.Exit
+    
+    Set aApp = Nothing
+    Set av_doc = Nothing
+
+
+End Sub
+Sub IfVendorExists()
+
+VendorsArray = Array("Bardahl", "Soprema", "Malerba", "Nordlux", "Renaulac")
+
+    For IndexVendor = LBound(VendorsArray) To UBound(VendorsArray)
+        
+        IfExists = FunctionFindVendor(VendorsArray(IndexVendor))
+        
+        If Not IsEmpty(IfExistsVendor) Then
+        
+            VendorName = VendorsArray(IndexVendor)
+            
+            IfExistsVendor = vbnullvalue
+            
+            Exit For
+            
+        End If
+        
+    Next IndexVendor
+
+    
+    If VendorName = "" Then
+    
+        Call VendorNotAModule
+        
+    End If
+    
+End Sub
+
+Sub VendorNotAModule()
+
+
+Set wsDa = Workbooks("FactureSAPKK").Worksheets("Data")
+
+lastrow = wsDa.Range("A" & Rows.Count).End(xlUp).Row
+
+Dim VendorArr() As Variant
+Dim RefArr() As Variant
+
+For CheckString = 2 To lastrow
+    
+    ReDim Preserve VendorArr(CheckString)
+    ReDim Preserve RefArr(CheckString)
+    
+    VendorArr(CheckString) = wsDa.Range("I" & CheckString).value
+    RefArr(CheckString) = wsDa.Range("B" & CheckString).value
+    
+    IfExistsVendorRef = FindAndAddLink(VendorArr(CheckString), RefArr(CheckString))
+    
+    If VendorRefExists = 1 Then
+    
+        myLink = nfile
+        
+        wsDa.Range("J" & CheckString).value = myLink
+        VendorRefExists = 0
+        Exit For
+
+        
+    End If
+    
+    Debug.Print VendorArr(CheckString) & RefArr(CheckString)
+    
+Next CheckString
+
+    
+    If VendorRefExists = 0 Then
+        
+        
+        VendorNotFound = VendorNotFound + 1
+        wsDa.Range("P" & VendorNotFound).value = nfile
+        
+    
+    End If
+
+Call CloseAndLoop
+
+End Sub
+Sub CollectMe()
+
+
+    Set wsDa = Worksheets("Data")
+    Set wsCD = Worksheets("Collect Data")
+    
+    wsCD.Select
+    
+    rLast = wsCD.Cells(Rows.Count, "A").End(xlUp).Row
+    
+    Set aRange = Range(Range("A1"), Range("A1").End(xlDown))
+    Set bRange = Range(Range("B1"), Range("B1").End(xlDown))
+    Set cRange = Range(Range("C1"), Range("C1").End(xlDown))
+    Set eRange = Range(Range("E1"), Range("E1").End(xlDown))
+    
+    For x = 2 To rLast
+    myRef = Range("A" & x)
+    myPO = Range("B" & x)
+    myMontant = Format(Range("C" & x), "00.00")
+    myTVA = Format(Range("E" & x), "00.00")
+    myPath = Range("F" & x)
+    
+    Set findValueRef = wsDa.Range("B:B").Find(What:=myRef, LookIn:=xlValues)
+    If findValueRef Is Nothing Then
+    nexterror = nexterror + 1
+    myMsg = "This value: " & myRef & " " & "was not found"
+    MsgBox myMsg
+    Range("K" & nexterror).value = myMsg
+    GoTo nextline
+    
+    End If
+    rowNR = findValueRef.Row
+    
+    wsDa.Range("J" & rowNR).value = myPath
+    
+        If findValueRef = myRef Then
+            Debug.Print findValueRef
+            wsDa.Range("E" & rowNR).value = myPO
+            wsDa.Range("C" & rowNR).value = myMontant
+            If myTVA = 0 Then
+            wsDa.Range("D" & rowNR).value = "A1"
+            Else
+            wsDa.Range("D" & rowNR).value = myTVA
+            End If
+            Else
+            MsgBox "Does not exist"
+        End If
+        
+nextline:
+    
+    Next
+    
+'Clear emptycells
+    
+    lastrow = Range("A" & Rows.Count).End(xlUp)
+    
+    Set ClearRange = Range("A2:A" & lastrow)
+    
+    With ClearRange
+        .SpecialCells(xlCellTypeBlanks).EntireRow.Delete
+    End With
+
+End Sub
+
+Sub AddLink()
+
+
+Set wsData = Workbooks("FactureSAPKK.xlsm").Worksheets("Data")
+
+wsData.Activate
+
+lastrow = Range("A" & Rows.Count).End(xlUp).Row
+
+    For PathOfFile = 2 To lastrow
+    
+     wsData.Cells(PathOfFile, 7).Select
+        
+        With ActiveCell
+            
+            MyPathXLSX = wsData.Range("J" & PathOfFile).value
+            
+           
+            myPathPDF = Replace(MyPathXLSX, ".xlsx", ".pdf")
+            
+            .Hyperlinks.Add Anchor:=.Range(ActiveCell.Address), _
+            Address:=myPathPDF, _
+            TextToDisplay:=myPathPDF
+            
+        End With
+        
+    ActiveCell.Offset(1, 0).Select
+        
+    Next PathOfFile
+    
+    For Each emptyrow In Range("M1:M" & lastrow * 2)
+    
+        If emptyrow.value = "" Then
+        
+            emptyrow.Delete Shift:=xlUp
+        
+        End If
+    
+    Next emptyrow
+    
+    Range("M2:M" & lastrow).Copy
+    Range("J2:J" & lastrow).PasteSpecial (xlPasteAll)
+    Columns("M").Clear
+    
+    Range("J2:J" & lastrow).Select
+    With Selection.Interior
+        .Pattern = xlSolid
+        .PatternColorIndex = xlAutomatic
+        .ThemeColor = xlThemeColorLight1
+
+    End With
+    
+    Columns("J").AutoFit
+
+End Sub

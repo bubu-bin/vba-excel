@@ -1,0 +1,118 @@
+Sub Run()
+
+Clear_Contents
+Fill_Categories
+
+End Sub
+Private Sub Clear_Contents()
+    
+    'Clear contents
+    Rows("1:27").Delete
+    Range("C:C").Delete
+    Columns("A:A").EntireColumn.AutoFit
+    Columns("B:B").ColumnWidth = 22.57
+    Columns("C:D").EntireColumn.AutoFit
+    
+    'Automate the selection
+ 
+    StartCell = Range("A1").Row
+    EndCell = Range("A1").End(xlDown).Row
+
+    'Extract the numbers
+    Range("E1").FormulaR1C1 = "=LEFT(RC[-1],FIND(""P"",RC[-1])-1)"
+    
+     'Fill the data
+    Range("E1").AutoFill Destination:=Range(Cells(StartCell, 5), Cells(EndCell, 5))
+    Range(Range("E1"), Range("E2").End(xlDown)).Copy
+    
+    'Paste
+    Range("D1").PasteSpecial Paste:=xlPasteValues, Operation:=xlNone
+    'Delete the former content
+     Range(Range("E1"), Range("E1").End(xlDown)).ClearContents
+     
+     'Convert to text
+    Range(Range("D1"), Range("D1").End(xlDown)).TextToColumns Destination:=Range("D1"), DataType:=xlDelimited, _
+        TextQualifier:=xlDoubleQuote, ConsecutiveDelimiter:=False, Tab:=True, _
+        Semicolon:=False, Comma:=False, Space:=False, Other:=False, FieldInfo _
+        :=Array(1, 1), TrailingMinusNumbers:=True
+     
+    'Formula for belongings
+    Range("E1").FormulaR1C1 = "=IF(RC[-1]>0,RC[-1],0)"
+    Range("E1").AutoFill Destination:=Range(Cells(StartCell, 5), Cells(EndCell, 5))
+    
+    'Formula for expenditures
+    Range("F1").FormulaR1C1 = "=IF(RC[-2]<0,RC[-2],0)"
+    Range("F1").AutoFill Destination:=Range(Cells(StartCell, 6), Cells(EndCell, 6))
+    
+    'Get down with minus
+    Range("G1").Value = "-1"
+    Range("G1").Copy
+    Range(Range("F1"), Range("F1").End(xlDown)).Select
+    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlMultiply, _
+        SkipBlanks:=False, Transpose:=False
+    
+    'Delete -1
+    Range("G1").ClearContents
+    Rows("1:1").Delete
+    'Copy the range and paste
+    Range("A1").CurrentRegion.Select
+    Selection.Copy
+    Sheets("Bud¿et").Select
+    Cells(1, 1).End(xlDown).Offset(1, 0).Select
+    ActiveSheet.Paste
+    
+    'Remove old data
+    Worksheets("Virgin_Data").Select
+    Range("A1").CurrentRegion.ClearContents
+    
+End Sub
+Private Sub Fill_Categories()
+
+    'Dim
+    StartCell = Range("A2").Row
+    EndCell = Range("A1").End(xlDown).Row
+    'Logic
+    For Counter = 1 To EndCell
+    If Cells(1 + Counter, 3) = "Bez kategorii" Then
+    myVb = Cells(1 + Counter, 1).Value & vbNewLine & Cells(1 + Counter, 2).Value & vbNewLine & Cells(1 + Counter, 6)
+    myY = "<Akcesoria i wyposa¿enie> " & vbNewLine & " <Alkohol> " & vbNewLine & " <Jedzenie poza domem> " & vbNewLine & " <Multimedia, ksi¹¿ki i prasa> " & vbNewLine & "<Odzie¿ i obuwie> " & vbNewLine & " <Paliwo> " & vbNewLine & " <Papierosy> " & vbNewLine & " <Przejazdy> " & vbNewLine & " <Remont i ogród> " & vbNewLine & " <Sport i hobby> " & vbNewLine & " <Wyjœcia i wydarzenia>" & vbNewLine & " <Zdrowie i uroda> " & vbNewLine & " <¯ywnoœæ i chemia domowa>"
+    Resp1 = InputBox("Co to by³o?" & vbNewLine & myVb & vbNewLine & myY, "Kategorie")
+    Resp1 = Application.WorksheetFunction.Proper(Resp1)
+    Cells(1 + Counter, 3).Value = Resp1
+    End If
+    Next
+
+End Sub
+Sub Analyze()
+
+Worksheets("Analyze").Select
+
+ActiveSheet.PivotTables("PivotTable3").PivotCache.Refresh
+ActiveSheet.PivotTables("PivotTable1").PivotCache.Refresh
+
+End Sub
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

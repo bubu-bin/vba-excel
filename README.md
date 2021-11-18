@@ -1,2 +1,2 @@
 # vba-excel
-Folder for projects made in VBA
+Projects in VBA
